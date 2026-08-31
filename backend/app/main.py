@@ -5,7 +5,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .core.config import settings
 from .db.session import init_db
-from .api.v1 import auth, components, diagnostics, sync, courses, admin, health
+from .api.v1 import auth, components, diagnostics, sync, courses, admin, health, digital_twin, media
 import structlog
 
 # Setup logger
@@ -58,6 +58,9 @@ app.include_router(diagnostics.router, prefix=f"{settings.API_V1_PREFIX}/diagnos
 app.include_router(sync.router, prefix=f"{settings.API_V1_PREFIX}/sync", tags=["sync"])
 app.include_router(courses.router, prefix=f"{settings.API_V1_PREFIX}/courses", tags=["courses"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
+app.include_router(digital_twin.router, prefix=f"{settings.API_V1_PREFIX}/digital-twin", tags=["digital-twin"])
+app.include_router(media.router, prefix=f"{settings.API_V1_PREFIX}/media", tags=["media"])
+app.include_router(media.router, prefix=f"{settings.API_V1_PREFIX}/documents", tags=["documents"])
 
 @app.on_event("startup")
 async def startup_event():

@@ -77,3 +77,6 @@ out/
 
 # Misc
 .cache/
+demo_venv/
+__pycache__/
+*.pyc
