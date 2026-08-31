@@ -1,0 +1,79 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+*.lock
+*.log
+*.apk
+*.aab
+*.ipa
+*.app
+client/.dart_tool/
+client/build/
+client/.flutter-plugins*
+client/pubspec.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+venv/
+.venv/
+env/
+.env
+*.env
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.sqlite
+*.db
+*.db-journal
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS
+*.tmp
+*.temp
+
+# App specific
+client/assets/models/*.glb
+client/assets/models/*.gltf
+!client/assets/models/.gitkeep
+storage/
+backups/
+logs/
+*.log
+
+# Secrets
+.env
+.env.local
+.env.production
+secrets/
+*.pem
+*.key
+
+# Node (for web tooling)
+node_modules/
+.next/
+out/
+
+# Misc
+.cache/
