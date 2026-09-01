@@ -59,22 +59,30 @@ def text(s, x, y, w, h, runs, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP,
     tf.word_wrap = True
     tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
     tf.vertical_anchor = anchor
+    # Convention: a list  -> its own paragraph containing several inline runs;
+    #             a tuple -> a single-run paragraph.
+    # A flat list of tuples is treated as ONE paragraph of inline runs.
+    if runs and all(isinstance(i, (tuple, str)) for i in runs):
+        groups = [list(runs)]
+    else:
+        groups = [g if isinstance(g, list) else [g] for g in runs]
     first = True
-    for item in runs:
-        if isinstance(item, str):
-            item = (item, 11, GREY, False)
-        txt, size, color, bold = (list(item) + [False])[:4]
+    for grp in groups:
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         p.alignment = align
         p.space_after = Pt(space_after)
         p.line_spacing = line_spacing
-        r = p.add_run()
-        r.text = txt
-        r.font.size = Pt(size)
-        r.font.color.rgb = color
-        r.font.bold = bold
-        r.font.name = "Calibri"
+        for item in grp:
+            if isinstance(item, str):
+                item = (item, 11, GREY, False)
+            txt, size, color, bold = (list(item) + [False])[:4]
+            r = p.add_run()
+            r.text = txt
+            r.font.size = Pt(size)
+            r.font.color.rgb = color
+            r.font.bold = bold
+            r.font.name = "Calibri"
     return tb
 
 
@@ -101,6 +109,30 @@ def slide(title=None, num=None):
     return s
 
 
+# --- text measurement (DejaVu metrics scaled to approximate Calibri) ---
+from PIL import Image, ImageDraw, ImageFont
+_M = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+_FCACHE = {}
+CALIBRI_FACTOR = 0.97   # Calibri is ~10% narrower than DejaVu Sans
+
+
+def _f(size_pt, bold=False):
+    k = (round(size_pt, 1), bold)
+    if k not in _FCACHE:
+        path = "/usr/share/fonts/truetype/dejavu/DejaVuSans%s.ttf" % ("-Bold" if bold else "")
+        _FCACHE[k] = ImageFont.truetype(path, max(6, int(round(size_pt * 4))))
+    return _FCACHE[k]
+
+
+def est_lines(txt, size_pt, width_in, bold=False):
+    """Conservative line count for `txt` at `size_pt` inside `width_in` inches."""
+    f = _f(size_pt, bold)
+    w_px = _M.textlength(txt, font=f) / 4.0          # back to points
+    w_pt = w_px * CALIBRI_FACTOR
+    avail_pt = width_in * 72.0
+    return max(1, int(-(-w_pt // avail_pt)))
+
+
 def bullet_block(s, x, y, w, items, size=11.5, gap=0.32, color=GREY,
                  dot=ORANGE, bold_head=True):
     """items: str, or (head, tail)."""
@@ -118,11 +150,10 @@ def bullet_block(s, x, y, w, items, size=11.5, gap=0.32, color=GREY,
             runs = [(it, size, color, False)]
         text(s, x + Inches(0.2), cy, w - Inches(0.2), Inches(0.4), runs,
              line_spacing=1.12)
-        lines = 1
-        approx = len(it[0] + it[1]) if isinstance(it, tuple) else len(it)
-        chars_per_line = int((w / Inches(1)) * (13.2 / (size / 11.5)) / 1.0)
-        lines = max(1, -(-approx // max(chars_per_line, 10)))
-        cy += Inches(gap) + Inches(0.19) * (lines - 1)
+        raw = (it[0] + " " + it[1]) if isinstance(it, tuple) else it
+        lines = est_lines(raw, size, (w - Inches(0.2)) / Inches(1))
+        line_h = size * 1.12 / 72.0
+        cy += Inches(max(gap, line_h * lines + 0.19))
     return cy
 
 
@@ -216,11 +247,11 @@ y += Inches(0.3)
 y = bullet_block(s, Inches(0.62), y, Inches(7.4), [
     ("Single portal, three roles.", "Trainee, Trainer and Admin — secure signup/login with Admin approval and role management."),
     ("Trainee:", "professional profile (qualifications, experience, skills, interests, certificates), course enrollment, learning resources, subject-wise MCQ assessments and course feedback."),
-    ("Trainer:", "profile & competency declaration, questionnaires with deadlines, participation and performance monitoring, and a Trainer Library of recorded lectures, presentations and study material."),
-    ("Admin:", "user approval, dashboards for courses / enrollments / certifications / assessments / participation, and homepage publishing of notifications, announcements, achievements and new content."),
+    ("Trainer:", "competency declaration, questionnaires with deadlines, participation and performance monitoring, and a Trainer Library of recorded lectures, presentations and study material."),
+    ("Admin:", "user approval, role management, dashboards for courses / enrollments / certifications / assessments / participation, plus homepage publishing of notifications, announcements and achievements."),
     ("Competency mapping engine", "scores trainers against subject requirements to objectively identify the right trainer."),
     ("Offline-first edge app:", "a real local database plus a local AI node on 127.0.0.1, so work continues at sea and at remote sites."),
-], size=10.5, gap=0.29)
+], size=10, gap=0.28)
 
 y2 = section(s, Inches(0.5), y + Inches(0.05), Inches(7.6), "How it addresses the problem",
              ORANGE, LTORANGE)
@@ -228,7 +259,7 @@ bullet_block(s, Inches(0.62), y2, Inches(7.4), [
     "Replaces scattered drives, mail and spreadsheets with one auditable source of truth for learning and competency.",
     "Removes the connectivity barrier: every feature works offline and reconciles automatically on reconnect.",
     "Turns tacit instrument know-how into retrievable, guided diagnostic procedures.",
-], size=10.5, gap=0.29, dot=ORANGE)
+], size=10, gap=0.28, dot=ORANGE)
 
 rect(s, Inches(8.35), Inches(1.58), Inches(4.5), Inches(5.2), LTBLUE, line=BORDER)
 text(s, Inches(8.6), Inches(1.75), Inches(4.0), Inches(0.3),
@@ -374,7 +405,7 @@ for i, (a, b) in enumerate(rows):
 s = slide("IMPACT AND BENEFITS", 5)
 y = section(s, Inches(0.5), Inches(1.15), Inches(12.35), "Potential impact on the target audience")
 imp = [("TRAINEES / FIELD ENGINEERS", BLUE, LTBLUE,
-        ["Learn, test and get certified with zero connectivity — at sea, at buoy sites, in observatories",
+        ["Learn, test and certify with zero connectivity — at sea and at remote sites",
          "Guided AI diagnostics instead of waiting for shore support",
          "Portable, verifiable competency profile"]),
        ("TRAINERS", ORANGE, LTORANGE,
@@ -387,16 +418,16 @@ imp = [("TRAINEES / FIELD ENGINEERS", BLUE, LTBLUE,
          "Complete audit trail for governance and reporting"])]
 for i, (t, c, f, items) in enumerate(imp):
     x = Inches(0.5 + i * 4.15)
-    rect(s, x, y, Inches(3.95), Inches(1.85), f, line=BORDER)
+    rect(s, x, y, Inches(3.95), Inches(1.92), f, line=BORDER)
     rect(s, x, y, Inches(3.95), Pt(4), c)
     text(s, x + Inches(0.16), y + Inches(0.14), Inches(3.6), Inches(0.28),
          [(t, 11, c, True)])
     for j, it in enumerate(items):
-        text(s, x + Inches(0.16), y + Inches(0.48) + Inches(0.44) * j, Inches(3.65),
-             Inches(0.42), [("· ", 10, c, True), (it, 9.5, GREY, False)],
+        text(s, x + Inches(0.16), y + Inches(0.46) + Inches(0.47) * j, Inches(3.6),
+             Inches(0.44), [("· ", 9.5, c, True), (it, 9.5, GREY, False)],
              line_spacing=1.1)
 
-y = y + Inches(2.08)
+y = y + Inches(2.14)
 y = section(s, Inches(0.5), y, Inches(12.35),
             "Benefits of the solution (social, economic, environmental)", ORANGE, LTORANGE)
 ben = [("SOCIAL", "Equitable access to training for remote and shipboard staff; skill "
@@ -435,30 +466,32 @@ y = section(s, Inches(0.5), Inches(1.15), Inches(12.35),
 groups = [
     ("Problem & organisational context", BLUE, [
         "SIH 2026 Problem Statement 26075 — Ministry of Earth Sciences (MoES) — sih.gov.in",
-        "Ministry of Earth Sciences — moes.gov.in  |  India Meteorological Department — mausam.imd.gov.in",
-        "MoES Annual Report — capacity building, training and human-resource development programmes",
-        "National Education Policy 2020 — digital learning, competency-based education and skilling",
+        "moes.gov.in  |  India Meteorological Department — mausam.imd.gov.in",
+        "MoES Annual Report — capacity building & human-resource development",
+        "National Education Policy 2020 — digital, competency-based learning",
+        "SIH 2026 portal guidelines — idea submission format and evaluation criteria",
     ]),
     ("Standards & frameworks referenced", ORANGE, [
-        "SCORM / xAPI (Experience API) — learning-record and progress interoperability model",
-        "IEEE 1484 LOM — learning object metadata for the course and document catalog",
-        "NIST SP 800-63B — digital identity and authentication guidance (password & session policy)",
-        "OWASP ASVS and OWASP Mobile Top 10 — application security verification baseline",
+        "SCORM / xAPI (Experience API) — learning-record interoperability",
+        "IEEE 1484 LOM — learning-object metadata for the course catalog",
+        "NIST SP 800-63B — digital identity & authentication guidance",
+        "OWASP ASVS + Mobile Top 10 — application security verification baseline",
         "NIST SP 800-38D — AES-256-GCM authenticated encryption",
-        "ISO/IEC 27001 Annex A — access control, logging and audit-trail controls",
+        "ISO/IEC 27001 Annex A — access control, logging, audit-trail controls",
     ]),
     ("Technology documentation", GREEN, [
-        "Flutter & Dart — docs.flutter.dev  |  Riverpod, GoRouter, Drift (drift.simonbinder.eu)",
+        "Flutter & Dart — docs.flutter.dev | Riverpod, GoRouter, Drift",
         "FastAPI — fastapi.tiangolo.com  |  SQLAlchemy, Alembic, Pydantic official docs",
         "SQLCipher — full-database encryption for SQLite (zetetic.net/sqlcipher)",
         "Khronos glTF 2.0 specification — 3D asset format for the Digital Twin",
-        "PostgreSQL 16 documentation  |  Docker Compose deployment reference",
+        "PostgreSQL 16 docs | Docker Compose deployment reference",
     ]),
     ("Domain & prior art studied", NAVY, [
-        "Digital Twin concepts for marine and oceanographic instrumentation (ISO 23247 asset-twin framing)",
-        "Argo programme float documentation — argo.ucsd.edu — profiling float operations & maintenance",
-        "Offline-first / local-first application patterns and CRDT vs. ledger-based sync literature",
-        "Open-source LMS comparison (Moodle, Open edX) — informed the role model and gap analysis",
+        "Digital Twin concepts for marine instrumentation (ISO 23247 framing)",
+        "Argo programme documentation — argo.ucsd.edu — float operations",
+        "Offline-first patterns; CRDT vs. ledger-based synchronisation literature",
+        "Open-source LMS study (Moodle, Open edX) — role model & gap analysis",
+        "RapidFuzz / TF-IDF retrieval literature — basis of the confidence score",
     ]),
 ]
 cy = y
@@ -471,8 +504,8 @@ for i, (t, c, items) in enumerate(groups):
     text(s, x + Inches(0.18), yy + Inches(0.14), Inches(5.6), Inches(0.28),
          [(t, 11.5, c, True)])
     for j, it in enumerate(items):
-        text(s, x + Inches(0.18), yy + Inches(0.5) + Inches(0.29) * j, Inches(5.65),
-             Inches(0.28), [("· ", 10, c, True), (it, 9, GREY, False)],
+        text(s, x + Inches(0.18), yy + Inches(0.48) + Inches(0.285) * j, Inches(5.6),
+             Inches(0.27), [("· ", 9, c, True), (it, 9, GREY, False)],
              line_spacing=1.05)
 
 text(s, Inches(0.5), Inches(6.55), Inches(12.3), Inches(0.3),
