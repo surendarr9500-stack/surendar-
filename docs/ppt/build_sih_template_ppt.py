@@ -86,6 +86,19 @@ def text(s, x, y, w, h, runs, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP,
     return tb
 
 
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+
+
+def picture(s, name, x, y, w, h, caption=None, cap_color=None):
+    path = os.path.join(ASSETS, name)
+    rect(s, x - Pt(1.5), y - Pt(1.5), w + Pt(3), h + Pt(3), NAVY)
+    s.shapes.add_picture(path, x, y, w, h)
+    if caption:
+        text(s, x, y + h + Inches(0.05), w, Inches(0.22),
+             [(caption, 8, cap_color or GREY, False)])
+    return y + h + (Inches(0.28) if caption else Inches(0.1))
+
+
 def slide(title=None, num=None):
     s = prs.slides.add_slide(BLANK)
     bg = rect(s, 0, 0, W, H, WHITE)
@@ -209,7 +222,7 @@ fields = [("Problem Statement ID", "26075"),
           ("Team Name (Registered on portal)", TEAM)]
 y = Inches(2.35)
 for i, (k, v) in enumerate(fields):
-    h = Inches(0.62)
+    h = Inches(0.58)
     rect(s, Inches(0.8), y, Inches(8.3), h, LTGREY if i % 2 == 0 else WHITE,
          line=BORDER)
     rect(s, Inches(0.8), y, Pt(4), h, ORANGE if i < 2 else BLUE)
@@ -217,21 +230,23 @@ for i, (k, v) in enumerate(fields):
          [(k, 12, NAVY, True)], anchor=MSO_ANCHOR.MIDDLE)
     text(s, Inches(4.2), y + Inches(0.05), Inches(4.75), Inches(0.52),
          [(v, 12, GREY, False)], anchor=MSO_ANCHOR.MIDDLE, line_spacing=1.05)
-    y += h + Inches(0.09)
+    y += h + Inches(0.08)
 
-rect(s, Inches(9.45), Inches(2.35), Inches(3.1), Inches(4.05), LTBLUE, line=BORDER)
-text(s, Inches(9.7), Inches(2.6), Inches(2.6), Inches(0.3),
-     [("ORGANISATION", 11, BLUE, True)])
-text(s, Inches(9.7), Inches(2.95), Inches(2.6), Inches(0.8),
-     [("Ministry of Earth Sciences (MoES)", 13, NAVY, True)], line_spacing=1.15)
-text(s, Inches(9.7), Inches(3.72), Inches(2.6), Inches(0.3),
-     [("DEPARTMENT", 11, BLUE, True)])
-text(s, Inches(9.7), Inches(4.05), Inches(2.6), Inches(0.7),
-     [("India Meteorological Department", 13, NAVY, True)], line_spacing=1.15)
-rect(s, Inches(9.7), Inches(4.85), Inches(2.6), Pt(3), BORDER)
-text(s, Inches(9.7), Inches(5.05), Inches(2.6), Inches(1.2),
-     [("Offline-first, secure, role-based capacity building for field, vessel and "
-       "observatory personnel.", 11, GREY, False)], line_spacing=1.25)
+picture(s, "digital_twin_box.png", Inches(9.45), Inches(2.35), Inches(3.1), Inches(2.05),
+        "Digital Twin concept (illustrative)")
+rect(s, Inches(9.45), Inches(4.72), Inches(3.1), Inches(1.68), LTBLUE, line=BORDER)
+text(s, Inches(9.7), Inches(4.88), Inches(2.6), Inches(0.28),
+     [("ORGANISATION", 10, BLUE, True)])
+text(s, Inches(9.7), Inches(5.14), Inches(2.65), Inches(0.5),
+     [("Ministry of Earth Sciences (MoES)", 12, NAVY, True)], line_spacing=1.12)
+text(s, Inches(9.7), Inches(5.72), Inches(2.6), Inches(0.28),
+     [("DEPARTMENT", 10, BLUE, True)])
+text(s, Inches(9.7), Inches(5.97), Inches(2.65), Inches(0.4),
+     [("India Meteorological Department", 12, NAVY, True)], line_spacing=1.12)
+rect(s, Inches(0.8), Inches(6.5), Inches(8.3), Inches(0.55), LTORANGE, line=None, radius=True)
+text(s, Inches(1.0), Inches(6.63), Inches(8.0), Inches(0.35),
+     [("One portal for training, assessment and competency — that keeps working "
+       "when the network does not.", 12, ORANGE, True)])
 
 # ==================== SLIDE 2 — IDEA TITLE / PROPOSED SOLUTION ====================
 s = slide("IDEA TITLE", 2)
@@ -261,27 +276,28 @@ bullet_block(s, Inches(0.62), y2, Inches(7.4), [
     "Turns tacit instrument know-how into retrievable, guided diagnostic procedures.",
 ], size=10, gap=0.28, dot=ORANGE)
 
-rect(s, Inches(8.35), Inches(1.58), Inches(4.5), Inches(5.2), LTBLUE, line=BORDER)
-text(s, Inches(8.6), Inches(1.75), Inches(4.0), Inches(0.3),
-     [("Innovation and uniqueness of the solution", 12, BLUE, True)])
-inno = [("Offline is the default, not a fallback.",
-         "The local SQLite/Drift store is a functioning operating database, not a cache."),
-        ("Local AI engine with no cloud LLM.",
-         "Deterministic keyword→phrase→fuzzy→retrieval pipeline returns structured JSON on 127.0.0.1."),
-        ("Learning fused with operations.",
-         "A described fault maps to a real asset and to the exact training module that covers it."),
-        ("3D Digital Twin guidance.",
-         "SONAR-001 → Mesh_042 highlighted in CRITICAL state from locally cached GLTF/GLB."),
-        ("Objective competency mapping.",
-         "Trainer-to-subject fit is computed from skills, certificates and assessment outcomes."),
-        ("Auditable sync ledger.",
-         "Every offline action is a versioned transaction with explicit conflict handling.")]
-cy = Inches(2.2)
+picture(s, "ui_mockup_wide.png", Inches(8.35), Inches(1.58), Inches(4.5), Inches(1.95),
+        "Concept UI mockup — offline dashboard and mobile learning app")
+rect(s, Inches(8.35), Inches(3.80), Inches(4.5), Inches(3.0), LTBLUE, line=BORDER)
+text(s, Inches(8.6), Inches(3.94), Inches(4.1), Inches(0.3),
+     [("Innovation and uniqueness of the solution", 11.5, BLUE, True)])
+inno = [("Offline is the default, not a fallback",
+         "the local DB is an operating database, not a cache"),
+        ("Local AI engine, no cloud LLM",
+         "deterministic retrieval pipeline on 127.0.0.1"),
+        ("Learning fused with operations",
+         "a fault maps to the asset and to the training that covers it"),
+        ("3D Digital Twin guidance",
+         "SONAR-001 → Mesh_042 shown CRITICAL from a cached GLB"),
+        ("Objective competency mapping",
+         "fit computed from skills, certificates and outcomes"),
+        ("Auditable sync ledger",
+         "every offline action is versioned and conflict-checked")]
+cy = Inches(4.28)
 for h_, d in inno:
-    text(s, Inches(8.6), cy, Inches(4.0), Inches(0.3), [(h_, 11, NAVY, True)])
-    text(s, Inches(8.6), cy + Inches(0.22), Inches(4.0), Inches(0.5),
-         [(d, 10, GREY, False)], line_spacing=1.12)
-    cy += Inches(0.75)
+    text(s, Inches(8.6), cy, Inches(4.05), Inches(0.4),
+         [(h_ + " — ", 9, NAVY, True), (d, 9, GREY, False)], line_spacing=1.1)
+    cy += Inches(0.42)
 
 # ==================== SLIDE 3 — TECHNICAL APPROACH ====================
 s = slide("TECHNICAL APPROACH", 3)

@@ -66,20 +66,24 @@ def text(s, x, y, w, h, runs, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP,
     tf.word_wrap = True
     tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
     tf.vertical_anchor = anchor
+    # Convention: a tuple -> its own paragraph (single run);
+    #             a list  -> one paragraph containing several inline runs.
     first = True
-    for item in runs:
-        txt, size, color, bold = (list(item) + [False])[:4]
+    for group in runs:
+        grp = group if isinstance(group, list) else [group]
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         p.alignment = align
         p.space_after = Pt(space_after)
         p.line_spacing = line_spacing
-        r = p.add_run()
-        r.text = txt
-        r.font.size = Pt(size)
-        r.font.color.rgb = color
-        r.font.bold = bold
-        r.font.name = "Segoe UI"
+        for item in grp:
+            txt, size, color, bold = (list(item) + [False])[:4]
+            r = p.add_run()
+            r.text = txt
+            r.font.size = Pt(size)
+            r.font.color.rgb = color
+            r.font.bold = bold
+            r.font.name = "Segoe UI"
     return tb
 
 
@@ -103,7 +107,7 @@ def bullets(s, x, y, w, items, size=13, gap=0.42, bullet_color=TEAL):
         d.line.fill.background(); d.shadow.inherit = False
         if isinstance(it, tuple):
             text(s, x + Inches(0.24), cy, w - Inches(0.24), Inches(0.4),
-                 [(it[0] + "  ", size, WHITE, True), (it[1], size, MUTED, False)])
+                 [[(it[0] + "  ", size, WHITE, True), (it[1], size, MUTED, False)]])
             tb = s.shapes[-1].text_frame.paragraphs[0]
         else:
             text(s, x + Inches(0.24), cy, w - Inches(0.24), Inches(0.4),
@@ -259,7 +263,7 @@ diffs = ["Offline-first by design — local SQLite/Drift is the operating DB, no
 for i, d in enumerate(diffs):
     col, row = i % 2, i // 2
     text(s, Inches(0.9 + col * 5.9), Inches(5.9 + row * 0.38), Inches(5.7), Inches(0.35),
-         [("▸  ", 11, TEAL, True), (d, 11, MUTED, False)])
+         [[("▸  ", 11, TEAL, True), (d, 11, MUTED, False)]])
 
 # ======================= 4. ARCHITECTURE =======================
 s = slide()
@@ -326,14 +330,14 @@ for i, (t, c, items) in enumerate(groups):
     text(s, x + Inches(0.2), Inches(1.72), Inches(2.6), Inches(0.3), [(t, 13, c, True)])
     for j, it in enumerate(items):
         text(s, x + Inches(0.2), Inches(2.2 + j * 0.43), Inches(2.6), Inches(0.35),
-             [("· ", 11, c, True), (it, 10.5, MUTED, False)], line_spacing=1.1)
+             [[("· ", 11, c, True), (it, 10.5, MUTED, False)]], line_spacing=1.1)
 
 rect(s, Inches(0.6), Inches(6.2), Inches(12.13), Inches(0.75), NAVY_2,
      line=RGBColor(0x1C, 0x44, 0x72))
 text(s, Inches(0.85), Inches(6.32), Inches(11.6), Inches(0.5),
-     [("Targets: ", 11.5, TEAL, True),
-      ("Android (field tablets/phones) · Windows (vessel workstations) · Linux (shore servers/kiosks) · Web (admin & trainer portal). "
-       "One Dart codebase, adaptive layouts, single local schema.", 11, MUTED, False)],
+     [[("Targets: ", 11.5, TEAL, True),
+       ("Android (field tablets/phones) · Windows (vessel workstations) · Linux (shore servers/kiosks) · Web (admin & trainer portal). "
+        "One Dart codebase, adaptive layouts, single local schema.", 11, MUTED, False)]],
      line_spacing=1.2)
 
 # ======================= 6. AI ENGINE =======================
@@ -502,7 +506,7 @@ perm = [("Trainee / Field Engineer", "profile · enroll · learn · assess · fe
 for i, (r, d) in enumerate(perm):
     y = Inches(4.9 + i * 0.45)
     text(s, Inches(0.85), y, Inches(5.4), Inches(0.4),
-         [(r + " → ", 10.5, WHITE, True), (d, 10, MUTED, False)], line_spacing=1.1)
+         [[(r + " → ", 10.5, WHITE, True), (d, 10, MUTED, False)]], line_spacing=1.1)
 
 rect(s, Inches(6.9), Inches(4.3), Inches(5.83), Inches(2.45), CARD, line=RGBColor(0x1C, 0x44, 0x72))
 text(s, Inches(7.15), Inches(4.45), Inches(5.4), Inches(0.3),
@@ -585,9 +589,9 @@ for i, (n, t, d) in enumerate(steps):
 
 rect(s, Inches(0.6), Inches(6.05), Inches(12.13), Inches(0.72), NAVY_2, line=TEAL)
 text(s, Inches(0.85), Inches(6.2), Inches(11.6), Inches(0.4),
-     [("Acceptance criterion: ", 11.5, TEAL, True),
-      ("every stage above is executed against the real database, the real parser and the real sync ledger. If any critical stage fails, the build is not shipped.",
-       11, MUTED, False)])
+     [[("Acceptance criterion: ", 11.5, TEAL, True),
+       ("every stage above is executed against the real database, the real parser and the real sync ledger. If any critical stage fails, the build is not shipped.",
+        11, MUTED, False)]])
 
 # ======================= 12. FEASIBILITY =======================
 s = slide()
@@ -618,9 +622,9 @@ for i, (r, m) in enumerate(rows):
          [(m, 10, MUTED, False)], line_spacing=1.15)
 
 text(s, Inches(0.6), Inches(6.6), Inches(12.1), Inches(0.4),
-     [("Viability: ", 11, TEAL, True),
-      ("entirely open-source stack, single Dart codebase across four targets, containerized backend deployable on existing MoES/IMD infrastructure — no per-seat licensing.",
-       10.5, MUTED, False)])
+     [[("Viability: ", 11, TEAL, True),
+       ("entirely open-source stack, single Dart codebase across four targets, containerized backend deployable on existing MoES/IMD infrastructure — no per-seat licensing.",
+        10.5, MUTED, False)]])
 
 # ======================= 13. IMPACT =======================
 s = slide()
@@ -673,9 +677,9 @@ for i, (p, t, d, c) in enumerate(phases):
     text(s, Inches(5.0), ry + Inches(0.22), Inches(7.5), Inches(0.35), [(d, 10.5, MUTED, False)])
 
 text(s, Inches(0.6), Inches(6.75), Inches(12.1), Inches(0.4),
-     [("Definition of Done: ", 11, TEAL, True),
-      ("code exists AND build succeeds AND tests pass AND UI works AND database works AND error states work AND offline behaviour is verified AND documentation is updated.",
-       10.5, MUTED, False)])
+     [[("Definition of Done: ", 11, TEAL, True),
+       ("code exists AND build succeeds AND tests pass AND UI works AND database works AND error states work AND offline behaviour is verified AND documentation is updated.",
+        10.5, MUTED, False)]])
 
 # ======================= 15. CLOSING =======================
 s = slide()
@@ -698,7 +702,7 @@ items = ["Real offline-first local database, not a cache",
          "RBAC enforced at the API, not just in the UI"]
 for i, it in enumerate(items):
     text(s, Inches(0.85), Inches(4.55 + i * 0.42), Inches(7.2), Inches(0.35),
-         [("✓  ", 12, GREEN, True), (it, 12, MUTED, False)])
+         [[("✓  ", 12, GREEN, True), (it, 12, MUTED, False)]])
 
 rect(s, Inches(8.6), Inches(2.8), Inches(4.13), Inches(3.9), CARD, line=RGBColor(0x1C, 0x44, 0x72))
 text(s, Inches(8.9), Inches(3.05), Inches(3.6), Inches(0.3), [("SUBMISSION", 11, TEAL, True)])

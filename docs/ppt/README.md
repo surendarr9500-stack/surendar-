@@ -4,6 +4,7 @@
 |---|---|
 | `SIH2026_IDEA_CAPACITY_CONNECT_26075.pptx` | **Official SIH Idea Submission format** — exactly 6 slides with the mandated section headings. This is the one to upload. |
 | `CAPACITY_CONNECT_SIH2026_26075.pptx` | Extended 15-slide engineering pitch deck for presentation day / internal review. |
+| `assets/*.png` | Concept visuals used in the deck — **AI-generated illustrative mockups**, not screenshots of a shipped build. Replace with real screenshots once the app is running. |
 | `preview/slide_XX.png` | Rendered previews of the 6-slide submission deck (approximate — fonts differ slightly from PowerPoint). |
 
 ## Before you submit

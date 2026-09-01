@@ -97,6 +97,15 @@ def render(path, outdir, scale=1.0):
                 x0, x1 = x1, x0
             if y1 < y0:
                 y0, y1 = y1, y0
+            if sh.shape_type is not None and "PICTURE" in str(sh.shape_type):
+                try:
+                    from io import BytesIO
+                    im = Image.open(BytesIO(sh.image.blob)).convert("RGB")
+                    im = im.resize((max(1, x1 - x0), max(1, y1 - y0)))
+                    img.paste(im, (x0, y0))
+                except Exception as e:
+                    d.rectangle([x0, y0, x1, y1], outline=(200, 0, 0), width=2)
+                continue
             name = sh.shape_type
             if sh.has_text_frame and str(sh.shape_type).startswith("TEXT_BOX"):
                 pass
