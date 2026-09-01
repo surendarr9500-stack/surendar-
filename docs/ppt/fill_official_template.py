@@ -2,15 +2,14 @@
 
 This edits *your* template file: it keeps the file's masters, layouts, theme,
 SIH logo, footer and slide titles, deletes only the placeholder prompt text,
-and writes the Capacity Connect content into the body area of each slide.
+and writes the Capacity Connect content and images into the body of each slide.
+
+GENERATED FILE - edit build_sih_official.py and re-run make_fill_variant.py.
 
 Usage
 -----
     pip install python-pptx pillow
     python3 fill_official_template.py <your_template.pptx> [output.pptx]
-
-Then open the output in LibreOffice Impress / PowerPoint / Google Slides and
-export to PDF for the SIH portal.
 """
 import os
 import sys
@@ -27,13 +26,14 @@ OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
 
 if not os.path.exists(TEMPLATE):
     sys.exit("Template not found: %s\n"
-             "Download your SIH template from Google Drive as .pptx and pass its path."
+             "Download your SIH template from Google Drive as .pptx "
+             "(File -> Download -> Microsoft PowerPoint) and pass its path."
              % TEMPLATE)
 
 prs = Presentation(TEMPLATE)
 
-# The layout below is authored for a 13.333 x 7.5 in canvas. Google Slides
-# exports 10 x 5.625 in. Same 16:9 ratio, so scale everything uniformly.
+# Layout below is authored on a 13.333 x 7.5 in canvas. Google Slides exports
+# 10 x 5.625 in - same 16:9 ratio, so scale everything uniformly.
 DESIGN_W = 13.333
 SCALE = (prs.slide_width / 914400.0) / DESIGN_W
 
@@ -47,13 +47,13 @@ def Pt(v):
 
 
 def FS(v):
-    """Font size in points, scaled."""
+    """Font size in points, scaled to the template's canvas."""
     return _Pt(round(v * SCALE, 1))
 
 
 W, H = prs.slide_width, prs.slide_height
 
-# Text used by the blank SIH template that must be cleared before we write.
+# Placeholder text used by the blank SIH template - cleared before writing.
 PROMPTS = [
     "problem statement id", "problem statement title", "theme-", "ps category",
     "team id", "team name (registered on portal)",
@@ -67,24 +67,21 @@ PROMPTS = [
 ]
 
 
-def clear_body(slide, title_keep=True):
-    """Delete the template's placeholder prompt text, keep chrome (logo, footer,
-    page number, title). Shapes in the top 12% / bottom 12% of the slide are
-    treated as chrome and never removed."""
+def clear_body(slide):
+    """Delete the template's prompt text, keep chrome.
+
+    Shapes in the top 13% / bottom 13% of the slide (logo, team box, title,
+    footer, page number) are never touched.
+    """
     top_zone = H * 0.13
     bot_zone = H * 0.87
     for sh in list(slide.shapes):
-        if not sh.has_text_frame:
-            continue
-        if sh.top is None:
+        if not sh.has_text_frame or sh.top is None:
             continue
         if sh.top < top_zone or sh.top > bot_zone:
-            continue                      # chrome band - leave alone
-        txt = sh.text_frame.text.strip().lower()
-        if not txt:
-            sh._element.getparent().remove(sh._element)
             continue
-        if any(k in txt for k in PROMPTS):
+        txt = sh.text_frame.text.strip().lower()
+        if not txt or any(k in txt for k in PROMPTS):
             sh._element.getparent().remove(sh._element)
 
 
@@ -179,13 +176,12 @@ def slide(title=None, num=None):
     """Return the template's own slide `num`, cleared of prompt text.
 
     The template's chrome (SIH logo, footer, page number, team box, slide
-    title) is kept exactly as it is in your file.
+    title) is left exactly as it is in your file.
     """
     idx = num - 1
     if idx >= len(prs.slides._sldIdLst):
-        raise SystemExit(
-            "Your template has only %d slides; expected at least 6."
-            % len(prs.slides._sldIdLst))
+        raise SystemExit("Your template has only %d slides; expected at least 6."
+                         % len(prs.slides._sldIdLst))
     s = prs.slides[idx]
     clear_body(s)
     return s
@@ -355,230 +351,228 @@ s = slide("TECHNICAL APPROACH", 3)
 y = section(s, Inches(0.5), Inches(1.15), Inches(12.35),
             "Technologies to be used (programming languages, frameworks, hardware)")
 stacks = [("CLIENT", BLUE, LTBLUE,
-           ["Flutter 3 / Dart, Material 3", "Riverpod state · GoRouter",
-            "Drift + SQLite (SQLCipher)", "flutter_secure_storage · Dio",
-            "Android · Windows · Linux · Web"]),
+           ["Flutter 3 / Dart, Material 3", "Riverpod state - GoRouter",
+            "Drift + SQLite (SQLCipher)", "Android - Windows - Linux - Web"]),
           ("LOCAL AI", ORANGE, LTORANGE,
-           ["Python 3.11 · FastAPI on 127.0.0.1", "Normalize · language detect · tokenize",
-            "Keyword / phrase / RapidFuzz match", "TF-IDF knowledge retrieval",
-            "Pluggable local LLM slot"]),
+           ["Python 3.11 - FastAPI on 127.0.0.1", "Normalise - detect - tokenize",
+            "Keyword / phrase / RapidFuzz", "TF-IDF retrieval, pluggable LLM"]),
           ("3D & MEDIA", GREEN, LTGREEN,
-           ["GLTF / GLB cached locally", "Mesh mapping + fault state layer",
-            "Chunked resumable downloads", "Streaming video · PDF viewer",
-            "Optional speech-to-text input"]),
+           ["GLTF / GLB cached locally", "Mesh mapping + fault state",
+            "Resumable chunked downloads", "Streaming video - PDF viewer"]),
           ("BACKEND & OPS", NAVY, LTGREY,
-           ["FastAPI · SQLAlchemy · Pydantic", "PostgreSQL + Alembic migrations",
-            "Celery workers · JWT + refresh", "Docker · GitHub Actions CI",
-            "pytest · flutter test/analyze"])]
+           ["FastAPI - SQLAlchemy - Pydantic", "PostgreSQL + Alembic",
+            "JWT + refresh - Docker - CI", "pytest - flutter test/analyze"])]
 for i, (t, c, f, items) in enumerate(stacks):
     x = Inches(0.5 + i * 3.12)
-    rect(s, x, y, Inches(2.95), Inches(1.72), f, line=BORDER)
+    rect(s, x, y, Inches(2.95), Inches(1.45), f, line=BORDER)
     rect(s, x, y, Inches(2.95), Pt(4), c)
-    text(s, x + Inches(0.15), y + Inches(0.13), Inches(2.6), Inches(0.28),
-         [(t, 11.5, c, True)])
+    text(s, x + Inches(0.15), y + Inches(0.11), Inches(2.6), Inches(0.26),
+         [(t, 11, c, True)])
     for j, it in enumerate(items):
-        text(s, x + Inches(0.15), y + Inches(0.45) + Inches(0.25) * j, Inches(2.7),
-             Inches(0.24), [("· ", 10, c, True), (it, 9.5, GREY, False)])
+        text(s, x + Inches(0.15), y + Inches(0.42) + Inches(0.25) * j, Inches(2.7),
+             Inches(0.24), [("- ", 9.5, c, True), (it, 9.5, GREY, False)])
 
-y = y + Inches(1.95)
+y = y + Inches(1.68)
 y = section(s, Inches(0.5), y, Inches(12.35),
             "Methodology and process for implementation", ORANGE, LTORANGE)
 
-text(s, Inches(0.5), y, Inches(12.3), Inches(0.25),
-     [("A. System architecture — edge application works with zero connectivity; cloud platform is independently deployable",
-       10.5, NAVY, True)])
-y += Inches(0.3)
-flow(s, Inches(0.5), y, Inches(12.35),
-     ["Flutter Client\n(Material 3)", "Local AI Node\n127.0.0.1", "Local DB\nSQLCipher",
-      "Digital Twin\nGLTF/GLB", "Sync Ledger\n(encrypted)", "FastAPI\n/api/v1",
-      "PostgreSQL\n+ workers", "Admin Portal\n& Dashboards"], size=8.5, h=0.58)
+picture(s, "s3_arch.png", Inches(9.6), y - Inches(0.02), Inches(3.25), Inches(1.75),
+        "Offline-first edge + cloud, joined by a sync ledger")
 
-y += Inches(0.78)
-text(s, Inches(0.5), y, Inches(12.3), Inches(0.25),
-     [("B. Local AI troubleshooting pipeline — returns structured JSON, confidence is a defined weighted score",
+text(s, Inches(0.5), y, Inches(8.9), Inches(0.25),
+     [("A. System architecture - the edge application works with zero connectivity",
        10.5, NAVY, True)])
-y += Inches(0.3)
-flow(s, Inches(0.5), y, Inches(12.35),
-     ["Input", "Normalize", "Tokenize", "Keyword +\nPhrase", "Fuzzy\nMatch",
-      "Knowledge\nRetrieval", "Component\n+ Severity", "3D Mesh\nMapping"],
+flow(s, Inches(0.5), y + Inches(0.28), Inches(8.9),
+     ["Flutter\nClient", "Local AI\n127.0.0.1", "Local DB\nSQLCipher",
+      "Digital Twin\nGLTF/GLB", "Sync\nLedger", "Cloud API\n+ DB"], size=8.5, h=0.55)
+
+text(s, Inches(0.5), y + Inches(0.95), Inches(8.9), Inches(0.25),
+     [("B. Local AI troubleshooting pipeline - returns structured JSON",
+       10.5, NAVY, True)])
+flow(s, Inches(0.5), y + Inches(1.23), Inches(8.9),
+     ["Input", "Normalise\n+ tokenize", "Keyword /\nfuzzy match", "Knowledge\nretrieval",
+      "Component\n+ severity", "3D mesh\nmapping"],
      color=ORANGE, fill=LTORANGE, size=8.5, h=0.55)
 
-y += Inches(0.72)
-rect(s, Inches(0.5), y, Inches(12.35), Inches(0.72), LTGREY, line=BORDER)
-text(s, Inches(0.7), y + Inches(0.09), Inches(12.0), Inches(0.55),
-     [('Worked example: "Sonar transducer showing abnormal vibration and casing fracture" → ',
+yb = y + Inches(2.05)
+rect(s, Inches(0.5), yb, Inches(12.35), Inches(0.68), LTGREY, line=BORDER)
+text(s, Inches(0.7), yb + Inches(0.08), Inches(12.0), Inches(0.52),
+     [('Worked example: "Sonar transducer showing abnormal vibration and casing fracture" -> ',
        10.5, GREY, False),
-      ("SONAR-001 · Sonar Transducer Array · Mesh_042 · severity HIGH · confidence 0.94 → "
-       "Digital Twin highlight + diagnostic procedure + diagnostic record saved offline.",
-       10.5, NAVY, True)], line_spacing=1.2)
+      ("SONAR-001 - Mesh_042 - severity HIGH - confidence 0.94 -> twin highlight, "
+       "diagnostic procedure and record saved offline.", 10.5, NAVY, True)],
+     line_spacing=1.2)
 
 # ==================== SLIDE 4 — FEASIBILITY AND VIABILITY ====================
 s = slide("FEASIBILITY AND VIABILITY", 4)
 y = section(s, Inches(0.5), Inches(1.15), Inches(12.35), "Analysis of the feasibility of the idea")
-feas = [("Technically proven stack",
-         "Flutter, FastAPI and PostgreSQL are mature and fully open-source; one Dart codebase covers Android, Windows, Linux and Web."),
-        ("No exotic hardware",
-         "Runs on existing MoES/IMD field tablets and vessel workstations; backend is containerised on existing infrastructure."),
-        ("Zero licensing cost",
-         "Entirely open-source; no per-seat fees, so scaling to more users and institutes costs only storage and compute."),
-        ("Incremental rollout",
-         "Portal features usable from day one; AI and Digital Twin layers extend the same schema without rework.")]
-cy = y
-for h_, d in feas:
-    col = 0 if feas.index((h_, d)) % 2 == 0 else 1
-    pass
-for i, (h_, d) in enumerate(feas):
-    x = Inches(0.5 + (i % 2) * 6.25)
-    yy = y + Inches((i // 2) * 0.76)
-    rect(s, x, yy, Inches(6.0), Inches(0.68), LTGREEN, line=BORDER)
-    rect(s, x, yy, Pt(4), Inches(0.68), GREEN)
-    text(s, x + Inches(0.18), yy + Inches(0.08), Inches(5.6), Inches(0.25),
-         [(h_, 11, NAVY, True)])
-    text(s, x + Inches(0.18), yy + Inches(0.32), Inches(5.65), Inches(0.35),
-         [(d, 9.5, GREY, False)], line_spacing=1.1)
 
-y = y + Inches(1.62)
+picture(s, "s4_field.jpg", Inches(9.6), y, Inches(3.25), Inches(1.5),
+        "Target user: MoES / IMD field and shipboard personnel")
+
+feas = [("Technically proven stack",
+         "Flutter, FastAPI, PostgreSQL - one Dart codebase covers Android, Windows, Linux, Web."),
+        ("No exotic hardware",
+         "Runs on existing field tablets and vessel workstations; backend is containerised."),
+        ("Zero licensing cost",
+         "Entirely open-source - scaling costs only storage and compute, no per-seat fees."),
+        ("Incremental rollout",
+         "Portal usable from day one; AI and Digital Twin extend the same schema later.")]
+for i, (h_, d) in enumerate(feas):
+    x = Inches(0.5 + (i % 2) * 4.6)
+    yy = y + Inches((i // 2) * 0.78)
+    rect(s, x, yy, Inches(4.4), Inches(0.7), LTGREEN, line=BORDER)
+    rect(s, x, yy, Pt(4), Inches(0.7), GREEN)
+    text(s, x + Inches(0.16), yy + Inches(0.07), Inches(4.1), Inches(0.24),
+         [(h_, 10.5, NAVY, True)])
+    text(s, x + Inches(0.16), yy + Inches(0.31), Inches(4.15), Inches(0.36),
+         [(d, 9, GREY, False)], line_spacing=1.1)
+
+y = y + Inches(1.72)
 y = section(s, Inches(0.5), y, Inches(12.35),
-            "Potential challenges and risks  →  Strategies for overcoming these challenges",
+            "Potential challenges and risks  ->  Strategies for overcoming these challenges",
             ORANGE, LTORANGE)
 
 rows = [("Poor / no connectivity at sea and remote sites",
-         "Offline-first architecture: local operating DB + local AI node; sync ledger drains automatically on reconnect."),
+         "Offline-first architecture: local operating DB + local AI node; the sync ledger drains on reconnect."),
         ("Large 3D models on low-end field devices",
-         "Decimated LOD meshes by default, full-resolution GLB as optional download; renderer degrades to metadata-only view."),
+         "Decimated LOD meshes by default, full-resolution GLB optional; degrades to metadata-only view."),
         ("Offline credential caching weakens authentication",
-         "Admin-approved devices only, Argon2id verifier (never the password), bounded grace window, audit + re-verification on sync."),
+         "Admin-approved devices only, Argon2id verifier, bounded grace window, audit + re-verification."),
         ("Sync conflicts on shared records",
-         "Per-entity strategies (version compare, field merge, manual queue); diagnostic records are never silently overwritten."),
+         "Per-entity strategies with a manual-resolution queue; diagnostics are never silently overwritten."),
         ("Digital literacy and user adoption",
-         "Role-tailored simple UI, localisation-ready strings for Indian languages, optional voice input, in-app guided demo scenario."),
+         "Role-tailored simple UI, localisation-ready strings, optional voice input, in-app guided scenario."),
         ("Storage exhaustion on field devices",
-         "Storage manager with per-category usage, resumable downloads, permissioned removal of optional assets only.")]
-rect(s, Inches(0.5), y, Inches(12.35), Inches(0.34), NAVY)
-text(s, Inches(0.7), y + Inches(0.06), Inches(5.0), Inches(0.25),
-     [("CHALLENGE / RISK", 10.5, WHITE, True)])
-text(s, Inches(6.2), y + Inches(0.06), Inches(6.4), Inches(0.25),
-     [("MITIGATION STRATEGY", 10.5, WHITE, True)])
-for i, (a, b) in enumerate(rows):
-    ry = y + Inches(0.34 + i * 0.47)
-    rect(s, Inches(0.5), ry, Inches(12.35), Inches(0.47),
+         "Storage manager with per-category usage, resumable downloads, permissioned asset removal.")]
+rect(s, Inches(0.5), y, Inches(12.35), Inches(0.32), NAVY)
+text(s, Inches(0.7), y + Inches(0.05), Inches(5.0), Inches(0.24),
+     [("CHALLENGE / RISK", 10, WHITE, True)])
+text(s, Inches(6.2), y + Inches(0.05), Inches(6.4), Inches(0.24),
+     [("MITIGATION STRATEGY", 10, WHITE, True)])
+for i, (aa, bb) in enumerate(rows):
+    ry = y + Inches(0.32 + i * 0.45)
+    rect(s, Inches(0.5), ry, Inches(12.35), Inches(0.45),
          LTGREY if i % 2 == 0 else WHITE, line=BORDER)
-    text(s, Inches(0.7), ry + Inches(0.07), Inches(5.2), Inches(0.4),
-         [(a, 10, NAVY, True)], line_spacing=1.08)
-    text(s, Inches(6.2), ry + Inches(0.07), Inches(6.45), Inches(0.4),
-         [(b, 9.5, GREY, False)], line_spacing=1.08)
+    text(s, Inches(0.7), ry + Inches(0.07), Inches(5.2), Inches(0.38),
+         [(aa, 9.5, NAVY, True)], line_spacing=1.08)
+    text(s, Inches(6.2), ry + Inches(0.07), Inches(6.45), Inches(0.38),
+         [(bb, 9, GREY, False)], line_spacing=1.08)
 
 # ==================== SLIDE 5 — IMPACT AND BENEFITS ====================
 s = slide("IMPACT AND BENEFITS", 5)
 y = section(s, Inches(0.5), Inches(1.15), Inches(12.35), "Potential impact on the target audience")
+
+picture(s, "s5_training.jpg", Inches(9.75), y, Inches(3.1), Inches(1.75),
+        "Trainers and trainees on one governed platform")
+
 imp = [("TRAINEES / FIELD ENGINEERS", BLUE, LTBLUE,
-        ["Learn, test and certify with zero connectivity — at sea and at remote sites",
+        ["Learn, test and certify with zero connectivity",
          "Guided AI diagnostics instead of waiting for shore support",
          "Portable, verifiable competency profile"]),
        ("TRAINERS", ORANGE, LTORANGE,
-        ["One versioned library for lectures, presentations and material",
-         "Questionnaires with deadlines, auto-scoring, live participation view",
-         "Feedback shows which content actually works"]),
+        ["One versioned library for lectures and material",
+         "Questionnaires with deadlines and auto-scoring",
+         "Live participation and performance view"]),
        ("ADMINISTRATION / MoES", GREEN, LTGREEN,
-        ["Live dashboards of enrollment, certification and assessment",
+        ["Dashboards: enrollment, certification, assessment",
          "Objective trainer selection via competency mapping",
-         "Complete audit trail for governance and reporting"])]
+         "Complete audit trail for governance"])]
 for i, (t, c, f, items) in enumerate(imp):
-    x = Inches(0.5 + i * 4.15)
-    rect(s, x, y, Inches(3.95), Inches(1.92), f, line=BORDER)
-    rect(s, x, y, Inches(3.95), Pt(4), c)
-    text(s, x + Inches(0.16), y + Inches(0.14), Inches(3.6), Inches(0.28),
-         [(t, 11, c, True)])
+    x = Inches(0.5 + i * 3.05)
+    rect(s, x, y, Inches(2.85), Inches(1.9), f, line=BORDER)
+    rect(s, x, y, Inches(2.85), Pt(4), c)
+    text(s, x + Inches(0.14), y + Inches(0.12), Inches(2.6), Inches(0.26),
+         [(t, 10, c, True)])
     for j, it in enumerate(items):
-        text(s, x + Inches(0.16), y + Inches(0.46) + Inches(0.47) * j, Inches(3.6),
-             Inches(0.44), [("· ", 9.5, c, True), (it, 9.5, GREY, False)],
-             line_spacing=1.1)
+        text(s, x + Inches(0.14), y + Inches(0.46) + Inches(0.47) * j, Inches(2.6),
+             Inches(0.44), [("- ", 9, c, True), (it, 9, GREY, False)], line_spacing=1.1)
 
-y = y + Inches(2.14)
+y = y + Inches(2.12)
 y = section(s, Inches(0.5), y, Inches(12.35),
             "Benefits of the solution (social, economic, environmental)", ORANGE, LTORANGE)
 ben = [("SOCIAL", "Equitable access to training for remote and shipboard staff; skill "
                   "recognition through verifiable certificates; localisation-ready for "
-                  "Indian-language expansion; safer field work through guided procedures."),
+                  "Indian languages; safer field work through guided procedures."),
        ("ECONOMIC", "Lower instrument downtime and fewer avoidable failures; reduced travel "
-                    "and physical-classroom cost; open-source stack with no licensing fees; "
-                    "reusable across INCOIS, NCPOR and NIOT on the same core."),
+                    "and classroom cost; open-source stack with no licensing fees; reusable "
+                    "across INCOIS, NCPOR and NIOT."),
        ("ENVIRONMENTAL", "Fewer service trips and paper-free assessments; longer instrument "
-                         "life through timely preventive maintenance; better-maintained ocean "
-                         "and weather sensors mean higher-quality earth-science data.")]
+                         "life through timely preventive maintenance; better-maintained "
+                         "sensors mean higher-quality earth-science data.")]
 for i, (t, d) in enumerate(ben):
     x = Inches(0.5 + i * 4.15)
-    rect(s, x, y, Inches(3.95), Inches(1.35), WHITE, line=BORDER)
-    rect(s, x, y, Pt(4), Inches(1.35), NAVY)
-    text(s, x + Inches(0.18), y + Inches(0.12), Inches(3.6), Inches(0.25),
-         [(t, 11, NAVY, True)])
-    text(s, x + Inches(0.18), y + Inches(0.42), Inches(3.6), Inches(0.85),
-         [(d, 9.5, GREY, False)], line_spacing=1.15)
+    rect(s, x, y, Inches(3.95), Inches(1.3), WHITE, line=BORDER)
+    rect(s, x, y, Pt(4), Inches(1.3), NAVY)
+    text(s, x + Inches(0.18), y + Inches(0.1), Inches(3.6), Inches(0.24),
+         [(t, 10.5, NAVY, True)])
+    text(s, x + Inches(0.18), y + Inches(0.38), Inches(3.6), Inches(0.85),
+         [(d, 9, GREY, False)], line_spacing=1.15)
 
-y = y + Inches(1.55)
-rect(s, Inches(0.5), y, Inches(12.35), Inches(0.62), LTGREY, line=BORDER)
-metrics = [("100%", "core features usable offline"), ("↓ 40%", "target fault-resolution time"),
+y = y + Inches(1.5)
+rect(s, Inches(0.5), y, Inches(12.35), Inches(0.58), LTGREY, line=BORDER)
+metrics = [("100%", "core features usable offline"), ("40%", "target cut in fault-resolution time"),
            ("3", "roles, one governed platform"), ("4", "platforms, one codebase")]
 for i, (k, v) in enumerate(metrics):
     x = Inches(0.6 + i * 3.07)
-    text(s, x, y + Inches(0.1), Inches(1.3), Inches(0.3), [(k, 15, ORANGE, True)])
-    text(s, x + Inches(1.35), y + Inches(0.18), Inches(1.7), Inches(0.3),
-         [(v, 10, GREY, False)])
+    text(s, x, y + Inches(0.09), Inches(1.1), Inches(0.3), [(k, 14, ORANGE, True)])
+    text(s, x + Inches(1.15), y + Inches(0.16), Inches(1.9), Inches(0.3),
+         [(v, 9, GREY, False)])
 
 # ==================== SLIDE 6 — RESEARCH AND REFERENCES ====================
 s = slide("RESEARCH AND REFERENCES", 6)
 y = section(s, Inches(0.5), Inches(1.15), Inches(12.35),
             "Details / Links of the reference and research work")
 
+picture(s, "s6_refs.png", Inches(9.75), y, Inches(3.1), Inches(1.95),
+        "Standards, manuals and prior art reviewed")
+
 groups = [
     ("Problem & organisational context", BLUE, [
-        "SIH 2026 Problem Statement 26075 — Ministry of Earth Sciences (MoES) — sih.gov.in",
-        "moes.gov.in  |  India Meteorological Department — mausam.imd.gov.in",
-        "MoES Annual Report — capacity building & human-resource development",
-        "National Education Policy 2020 — digital, competency-based learning",
-        "SIH 2026 portal guidelines — idea submission format and evaluation criteria",
+        "SIH 2026 Problem Statement 26075 - sih.gov.in",
+        "Ministry of Earth Sciences - moes.gov.in",
+        "India Meteorological Department - mausam.imd.gov.in",
+        "MoES Annual Report - capacity building programmes",
+        "National Education Policy 2020 - competency-based learning",
     ]),
     ("Standards & frameworks referenced", ORANGE, [
-        "SCORM / xAPI (Experience API) — learning-record interoperability",
-        "IEEE 1484 LOM — learning-object metadata for the course catalog",
-        "NIST SP 800-63B — digital identity & authentication guidance",
-        "OWASP ASVS + Mobile Top 10 — application security verification baseline",
-        "NIST SP 800-38D — AES-256-GCM authenticated encryption",
-        "ISO/IEC 27001 Annex A — access control, logging, audit-trail controls",
+        "SCORM / xAPI - learning-record interoperability",
+        "IEEE 1484 LOM - learning-object metadata",
+        "NIST SP 800-63B - identity and authentication",
+        "NIST SP 800-38D - AES-256-GCM encryption",
+        "OWASP ASVS + Mobile Top 10; ISO/IEC 27001 Annex A",
     ]),
     ("Technology documentation", GREEN, [
-        "Flutter & Dart — docs.flutter.dev | Riverpod, GoRouter, Drift",
-        "FastAPI — fastapi.tiangolo.com  |  SQLAlchemy, Alembic, Pydantic official docs",
-        "SQLCipher — full-database encryption for SQLite (zetetic.net/sqlcipher)",
-        "Khronos glTF 2.0 specification — 3D asset format for the Digital Twin",
-        "PostgreSQL 16 docs | Docker Compose deployment reference",
+        "Flutter & Dart - docs.flutter.dev",
+        "Riverpod, GoRouter, Drift (drift.simonbinder.eu)",
+        "FastAPI, SQLAlchemy, Alembic, Pydantic docs",
+        "SQLCipher - encrypted SQLite (zetetic.net)",
+        "Khronos glTF 2.0 specification; PostgreSQL 16",
     ]),
     ("Domain & prior art studied", NAVY, [
-        "Digital Twin concepts for marine instrumentation (ISO 23247 framing)",
-        "Argo programme documentation — argo.ucsd.edu — float operations",
-        "Offline-first patterns; CRDT vs. ledger-based synchronisation literature",
-        "Open-source LMS study (Moodle, Open edX) — role model & gap analysis",
-        "RapidFuzz / TF-IDF retrieval literature — basis of the confidence score",
+        "Digital Twin for marine instrumentation (ISO 23247)",
+        "Argo programme documentation - argo.ucsd.edu",
+        "Offline-first patterns; CRDT vs ledger-based sync",
+        "Open-source LMS study (Moodle, Open edX)",
+        "RapidFuzz / TF-IDF retrieval - confidence scoring",
     ]),
 ]
-cy = y
 for i, (t, c, items) in enumerate(groups):
-    x = Inches(0.5 + (i % 2) * 6.25)
-    yy = y + Inches((i // 2) * 2.45)
-    h = Inches(2.3)
-    rect(s, x, yy, Inches(6.0), h, WHITE, line=BORDER)
-    rect(s, x, yy, Inches(6.0), Pt(4), c)
-    text(s, x + Inches(0.18), yy + Inches(0.14), Inches(5.6), Inches(0.28),
-         [(t, 11.5, c, True)])
+    x = Inches(0.5 + (i % 2) * 4.6)
+    yy = y + Inches((i // 2) * 2.28)
+    rect(s, x, yy, Inches(4.4), Inches(2.12), WHITE, line=BORDER)
+    rect(s, x, yy, Inches(4.4), Pt(4), c)
+    text(s, x + Inches(0.16), yy + Inches(0.12), Inches(4.05), Inches(0.26),
+         [(t, 10.5, c, True)])
     for j, it in enumerate(items):
-        text(s, x + Inches(0.18), yy + Inches(0.48) + Inches(0.285) * j, Inches(5.6),
-             Inches(0.27), [("· ", 9, c, True), (it, 9, GREY, False)],
+        text(s, x + Inches(0.16), yy + Inches(0.46) + Inches(0.32) * j, Inches(4.1),
+             Inches(0.3), [("- ", 8.5, c, True), (it, 8.5, GREY, False)],
              line_spacing=1.05)
 
-text(s, Inches(0.5), Inches(6.55), Inches(12.3), Inches(0.3),
-     [("Note: ", 9.5, NAVY, True),
-      ("all cited standards and libraries are open or publicly available; the solution uses no "
-       "proprietary or licence-restricted component.", 9.5, GREY, False)])
+text(s, Inches(0.5), Inches(6.5), Inches(12.3), Inches(0.3),
+     [("Note: ", 9, NAVY, True),
+      ("all cited standards and libraries are open or publicly available; the solution "
+       "uses no proprietary or licence-restricted component.", 9, GREY, False)])
 
 # SIH allows a maximum of 6 slides - drop the template's instruction slide(s).
 _ids = prs.slides._sldIdLst
@@ -594,5 +588,4 @@ if _removed:
     print("Removed %d extra slide(s) beyond the 6-slide limit." % _removed)
 print("Slide size: %.2f x %.2f in (scale %.3f)"
       % (prs.slide_width / 914400, prs.slide_height / 914400, SCALE))
-print("\nNext: open it, set Team Name / Team ID, delete any leftover instruction "
-      "slide, then export to PDF.")
+print("\nNext: set Team Name / Team ID, check the layout, then export to PDF.")

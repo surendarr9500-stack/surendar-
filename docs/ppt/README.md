@@ -1,75 +1,65 @@
-# Capacity Connect — presentation decks (SIH 2026, PS 26075)
+# Capacity Connect — SIH 2026 decks (PS 26075)
+
+## Files
 
 | File | Use |
 |---|---|
-| **`SIH2026_CAPACITY_CONNECT_26075_OFFICIAL_TEMPLATE.pptx`** | ⭐ **Submit this.** Content laid out inside the official SIH template chrome — team-name box (top-left), centred section title, SIH badge (top-right), dark `@SIH Idea submission- Template` footer bar with page numbers. 6 slides. |
-| `SIH2026_CAPACITY_CONNECT_26075_OFFICIAL_TEMPLATE_preview.pdf` | 6-page PDF preview of the above (approximate fonts — see note). |
-| `SIH2026_IDEA_CAPACITY_CONNECT_26075.pptx` | Earlier custom-styled version of the same 6 slides (same content, different chrome). |
-| `CAPACITY_CONNECT_SIH2026_26075.pptx` | Extended 15-slide deck for presentation day / internal review. |
-| `assets/*.png` | Concept visuals used in the decks — **AI-generated illustrative mockups**, not screenshots of a shipped build. Replace with real screenshots once the app runs. |
-| `preview_official/`, `preview/` | Per-slide PNG renders used for layout verification. |
+| **`SIH2026_CAPACITY_CONNECT_26075_OFFICIAL_TEMPLATE.pptx`** | Ready-to-submit 6-slide deck in the official SIH template layout. Every slide carries a visual. |
+| **`fill_official_template.py`** | Writes the same content into *your own* SIH template `.pptx` (keeps its theme, real logo, footer, titles). See below. |
+| `SIH2026_CAPACITY_CONNECT_26075_preview.pdf` | 6-page preview render (approximate fonts — see note). |
+| `preview/slide_01…06.png` | Per-slide PNG renders. |
+| `CAPACITY_CONNECT_SIH2026_26075.pptx` | Extended 15-slide deck for presentation day. |
+| `SIH2026_IDEA_CAPACITY_CONNECT_26075.pptx` | Earlier custom-styled variant of the 6 slides. |
+| `assets/` | Images used in the decks — **AI-generated illustrative visuals**, not screenshots of a shipped build. |
 
-## Before you submit
+## Images per slide
 
-1. **Set your team details** — edit at the top of `build_sih_official.py`:
-   ```python
-   TEAM    = "Team Name"   # registered team name (also fills the top-left box)
-   TEAM_ID = "Team ID"
-   ```
-   then re-run the script; or type over the placeholders in PowerPoint.
-2. **Drop in the official SIH logo.** The top-right badge is a text placeholder —
-   copy the real SIH 2026 logo from the template you were given and paste it over
-   the badge on each slide.
-3. **Export to PDF** in PowerPoint (`File → Save as → PDF`). The portal accepts PDF only.
-4. Keep it at 6 slides, and keep the mandated section headings unchanged.
+| Slide | Visual |
+|---|---|
+| 1 Title page | Digital Twin concept — fault highlighted on a component |
+| 2 Idea title | Concept UI mockup — offline dashboard + mobile learning app |
+| 3 Technical approach | Offline-first edge/cloud architecture banner + two flow charts |
+| 4 Feasibility | Field engineer with a rugged tablet on a research vessel |
+| 5 Impact | Trainer and trainees in a training session |
+| 6 Research | Standards, manuals and prior-art illustration |
+
+## Fill YOUR OWN template (Linux)
+
+```bash
+git clone -b arena/01a05db2-surendar https://github.com/surendarr9500-stack/surendar-.git
+cd surendar-/docs/ppt
+pip install --user python-pptx pillow
+
+# In Drive: File -> Download -> Microsoft PowerPoint (.pptx)
+python3 fill_official_template.py ~/Downloads/SIH2026_template.pptx capacity_connect.pptx
+
+libreoffice --headless --convert-to pdf capacity_connect.pptx
+```
+
+The script keeps everything in the top 13% and bottom 13% of each slide (logo,
+team box, title, footer, page number), deletes only the placeholder prompt text,
+scales the layout to the template's canvas (Google Slides exports 10 x 5.625 in),
+and removes any slide after the sixth.
+
+Set your details first, near the top of the script:
+
+```python
+TEAM    = "Team Name"   # also fills the template's top-left box
+TEAM_ID = "Team ID"
+```
 
 ## Regenerating
 
 ```bash
-pip install python-pptx pillow
-python3 build_sih_official.py          # official-template 6-slide deck
-python3 build_sih_template_ppt.py      # custom-styled 6-slide deck
-python3 build_ppt.py                   # extended 15-slide deck
+python3 build_sih_official.py       # standalone 6-slide deck
+python3 make_fill_variant.py        # regenerate fill_official_template.py from it
+python3 build_ppt.py                # extended 15-slide deck
 python3 preview_render.py <file.pptx> <outdir> [scale]
 ```
 
-`preview_render.py` is a minimal PPTX→PNG previewer for layout checking only.
-It renders with DejaVu Sans (the only font available in this environment), which
-is ~10% wider than Calibri — so real PowerPoint output is slightly *looser* than
-the previews, never tighter.
+`fill_official_template.py` is generated — edit `build_sih_official.py` and re-run
+`make_fill_variant.py` rather than editing it directly.
 
----
-
-## Linux: fill YOUR OWN template file (recommended)
-
-`fill_official_template.py` edits *your* SIH template `.pptx` in place — it keeps
-your file's masters, theme, SIH logo, footer and slide titles, deletes only the
-placeholder prompt text, and writes the Capacity Connect content (including the
-two images) into the body of each slide. It auto-scales to your template's slide
-size, so a 10 × 5.625 in Google Slides export works as well as 13.333 × 7.5 in.
-
-```bash
-# 1. get this repo on your machine
-git clone -b arena/01a05db2-surendar https://github.com/surendarr9500-stack/surendar-.git
-cd surendar-/docs/ppt
-
-# 2. dependencies
-pip install --user python-pptx pillow
-
-# 3. download your SIH template from Google Drive:
-#    File -> Download -> Microsoft PowerPoint (.pptx)
-
-# 4. fill it
-python3 fill_official_template.py ~/Downloads/SIH2026_template.pptx capacity_connect.pptx
-
-# 5. edit team name / logo if needed, then export to PDF
-libreoffice --headless --convert-to pdf capacity_connect.pptx
-```
-
-Set `TEAM` and `TEAM_ID` near the top of the script before step 4 to fill your
-registered team details automatically.
-
-The script keeps everything in the top 13% and bottom 13% of each slide
-untouched (that is where the template's logo, team box, title and footer live),
-and removes exactly 6 slides' worth of prompt text plus any slide after the
-sixth (the "Important Instructions" slide).
+`preview_render.py` is a minimal PPTX->PNG previewer for layout checking only. It
+renders with DejaVu Sans (the only font in this environment), ~10% wider than
+Calibri, so real PowerPoint output is slightly looser than the previews.
